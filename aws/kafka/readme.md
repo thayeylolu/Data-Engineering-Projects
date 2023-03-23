@@ -2,7 +2,7 @@
 # Data Pipeline for Real-Time Product Data Streaming with Kafka and AWS Service
 ----
 
-[The Arichture Diagram](Realtime_Kafka_Project.png)
+![The Arichture Diagram](Realtime_Kafka_Project.png)
 
 ## Introduction
 The goal of this project is to create a data pipeline that can handle real-time product data streaming and storage. The data will be streamed using Apache Kafka and processed using various AWS services, including Amazon S3, AWS Glue, and Amazon Athena. The project is intended to provide a blueprint for building real-time data processing systems using Kafka and AWS.
