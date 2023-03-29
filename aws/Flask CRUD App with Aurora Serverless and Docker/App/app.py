@@ -6,7 +6,20 @@ import os
 app = Flask(__name__)
 
 # get database url
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+
+# config = Config(region_name=os.getenv('AWS_REGION'))
+# rds_data = boto3.client(
+#     'rds-data',
+#     config=config,
+#     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+#     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'))
+#
+# aurora_db_name = os.getenv('AURORA_DB_NAME')
+# aurora_cluster_arn = os.getenv('AURORA_CLUSTER_ARN')
+# aurora_secret_arn = os.getenv('AURORA_SECRET_ARN')
+
+# connect DB endpoint
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('AURORA_DB_URL')
 db = SQLAlchemy(app)
 
 
