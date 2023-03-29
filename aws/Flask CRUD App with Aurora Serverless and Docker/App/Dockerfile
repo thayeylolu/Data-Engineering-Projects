@@ -1,9 +1,11 @@
-FROM python:3.7-slim
-COPY ./requirements.txt /Flask\ CRUD\ App\ with\ Aurora\ Serverless\ and\ Docker/requirements.txt
-WORKDIR  /Flask\ CRUD\ App\ with\ Aurora\ Serverless\ and\ Docker
-RUN pip install -r requirements.txt
-COPY . /app
-EXPOSE 8081
-ENTRYPOINT ['python']
-CMD ['-u', 'app.py']
+FROM python:3.6-slim-buster
 
+COPY requirements.txt .
+
+RUN pip install -r requirements.txt
+
+COPY . .
+
+# EXPOSE 80
+
+CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
