@@ -31,21 +31,57 @@ def create_usr_acct_tbl():
     );'''
     return create_table_command
 
-@app.route('/getUser'):
+
+@app.route('/getUser')
 def getUser():
-    id = request.args.get(id)
-    response = callDbWithStatement("SELECT * FROM users WHERE id = '"+str(id)+"' ;")
+    id = request.args.get('id')
+    response = callDbWithStatement("SELECT * FROM users WHERE id ='" + str(id) + "'")
     user = {}
     records = response['records']
     for record in records:
         user['id'] = record[0]['longValue']
         user['username'] = record[1]['stringValue']
-        user['age'] = record[2]['stringValue']
-        user['date_created'] = record[3]['stringValue']
+        user['user_email'] = record[2]['stringValue']
+        user['age'] = record[3]['longValue']
+        user['date_created'] = record[4]['stringValue']
     print(user)
     return jsonify(user)
 
 
+@app.route('/AllUser')
+def getAllUser():
+    response = callDbWithStatement("SELECT * FROM users")
+    recorder = {}
+
+    all_records = response['records']  # 2
+    for user_info in range(len(all_records)):
+        records = all_records[user_info]
+        user = {'id': records[0]['longValue'], 'username': records[1]['stringValue'],
+                'user_email': records[2]['stringValue'], 'age': records[3]['longValue'],
+                'date_created': records[4]['stringValue']}
+        recorder[int(user['id'])] = user
+
+    print('*' * 30)
+    print(recorder)
+    print('*' * 30)
+    return jsonify(recorder)
+
+
+# @app.route('/createUser', methods = ['POST']):
+
+
+def callDbWithStatement(sql):
+    response = rds_data.execute_statement(
+        database=aurora_db_name,
+        resourceArn=aurora_cluster_arn,
+        secretArn=aurora_secret_arn,
+        sql=sql,
+        includeResultMetadata=True
+    )
+    print(f'Making Call... {sql}')
+    print('.-' * 20)
+    print(response)
+    return response
 
 
 if __name__ == '__main__':
