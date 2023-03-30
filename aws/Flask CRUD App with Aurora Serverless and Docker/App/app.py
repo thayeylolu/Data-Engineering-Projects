@@ -45,8 +45,9 @@ db.create_all()
 
 # get user by id endpoint
 @app.route('/users/<userid>', methods=['GET'])
-def get_user(userid):
-    user = User.query.get(userid)
+def get_user(email):
+    # db.session.query(User).filter_by(id=email)
+    user = User.query.get(email)
     del user.__dict__['_sa_instance_state']
     return jsonify(user.__dict__)
 
@@ -62,7 +63,7 @@ def get_users():
 
 
 # create user endpoint
-@app.route('/users', methods=['POST'])
+@app.route('/createUser', methods=['POST'])
 def create_user():
     body = request.get_json()
     db.session.add(User(body['username'], body['email'], body['age']))
@@ -70,18 +71,18 @@ def create_user():
     return "user created"
 
 
-# update user endpoint
-@app.route('/users/<id>', methods=['PUT'])
-def update_user(userid):
+# update user by email endpoint
+@app.route('/updateUser/<id>', methods=['PUT'])
+def update_user(email):
     body = request.get_json()
-    db.session.query(User).filter_by(id=userid).update(
-        dict(email=body['email'], username=body['username'], age=body['age']))
+    db.session.query(User).filter_by(id=email).update(
+        dict(username=body['username'], age=body['age']))
     db.session.commit()
     return "User Details updated"
 
 
 # delete user by email
-@app.route('/users/<email>', methods=['DELETE'])
+@app.route('/deleteUser/<email>', methods=['DELETE'])
 def delete_item(email):
     db.session.query(User).filter_by(id=email).delete()
     db.session.commit()
