@@ -1,5 +1,5 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, request, jsonify, render_template, redirect
+from Flask-SQLAlchemy import SQLAlchemy
 import os
 
 # initialize flask app
@@ -18,7 +18,9 @@ app = Flask(__name__)
 # aurora_cluster_arn = os.getenv('AURORA_CLUSTER_ARN')
 # aurora_secret_arn = os.getenv('AURORA_SECRET_ARN')
 
-# connect DB endpoint
+# connect DB
+# project_dir = os.path.dirname(os.path.abspath(__file__))
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('AURORA_DB_URL')
 db = SQLAlchemy(app)
 
@@ -42,6 +44,21 @@ def __init__(self, username, email, age):
 # create DB
 db.create_all()
 
+
+# return web page
+@app.route("/home", methods=["GET"])
+def view_index():
+    return "<h2>fbjdfkbbv djksghv </h2>"
+    # return render_template("index.html")
+
+
+# @app.route("/edit/<note_id>", methods=["POST", "GET"])
+# def edit_note(note_id):
+#     if request.method == "POST":
+#         update_note(note_id, text=request.form['text'], done=request.form['done'])
+#     elif request.method == "GET":
+#         delete_note(note_id)
+#     return redirect("/", code=302)
 
 # get user by id endpoint
 @app.route('/users/<userid>', methods=['GET'])
