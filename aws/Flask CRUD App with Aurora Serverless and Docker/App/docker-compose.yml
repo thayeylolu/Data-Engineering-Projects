@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  pythonapp:
+    container_name: pythonapp
+    image: pythonapp
+    build: .
+    ports:
+      - "8011:80"
+    environment:
+      AURORA_DB_URL: "${AURORA_DB_URL}"
+    depends_on:
+      - db
+
+  db:
+    container_name: db
+    image: postgres:14.6
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: "${AURORA_DB_PWD}"
+      POSTGRES_USER: "${AURORA_DB_USERNAME}"
+      POSTGRES_DB: "${AURORA_DB_NAME}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+
+volumes:
+  pgdata: {}
