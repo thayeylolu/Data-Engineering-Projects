@@ -1,110 +1,107 @@
-from flask import Flask, request, jsonify, render_template, redirect
-from Flask-SQLAlchemy import SQLAlchemy
+# app.py
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import os
+import boto3
+from dotenv import load_dotenv
+from botocore.config import Config
 
-# initialize flask app
+load_dotenv()
 app = Flask(__name__)
 
-# get database url
+config = Config(region_name=os.getenv('AWS_REGION'))
+rds_data = boto3.client(
+    'rds-data',
+    config=config,
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'))
 
-# config = Config(region_name=os.getenv('AWS_REGION'))
-# rds_data = boto3.client(
-#     'rds-data',
-#     config=config,
-#     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-#     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'))
-#
-# aurora_db_name = os.getenv('AURORA_DB_NAME')
-# aurora_cluster_arn = os.getenv('AURORA_CLUSTER_ARN')
-# aurora_secret_arn = os.getenv('AURORA_SECRET_ARN')
-
-# connect DB
-# project_dir = os.path.dirname(os.path.abspath(__file__))
-
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('AURORA_DB_URL')
-db = SQLAlchemy(app)
+aurora_db_name = os.getenv('AURORA_DB_NAME')
+aurora_cluster_arn = os.getenv('AURORA_CLUSTER_ARN')
+aurora_secret_arn = os.getenv('AURORA_SECRET_ARN')
 
 
-# User Schema Class
-class User(db.Model):
-    userid = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), unique=True, nullable=False)
-    email = db.Column(db.String(20), unique=True, nullable=False)
-    age = db.Column(db.Integer, nullable=False)
-    # date_created = ...
+@app.route('/')
+def Index():
+    response = callDbWithStatement("SELECT * FROM users")
+    recorder = []
+    all_records = response['records']  # 2
+    for user_info in range(len(all_records)):
+        records = all_records[user_info]
+        user = {'id': records[0]['longValue'], 'username': records[1]['stringValue'],
+                'age': records[2]['longValue'], 'email': records[3]['stringValue']}
+        recorder.append(user)
+    list_user_tuple = [(d["id"], d["username"], d['age'], d['email']) for d in recorder]
+    return render_template('index.html', list_users=list_user_tuple)
 
 
-# initialize class objects
-def __init__(self, username, email, age):
-    self.username = username
-    self.email = email
-    self.age = age
+@app.route('/add_user', methods=['POST'])
+def add_user():
+    if request.method == 'POST':
+        username = request.form['username']
+        age = request.form['age']
+        email = request.form['email']
+        params = [
+            {'name': 'username', 'value': {'stringValue': username}},
+            {'name': 'age', 'value': {'longValue': int(age)}},
+            {'name': 'email', 'value': {'stringValue': email}}
+        ]
+
+        callDbWithStatement("INSERT INTO users (username, age, email) VALUES (:username, :age, :email)", params=params)
+        flash('User Added successfully')
+        return redirect(url_for('Index'))
 
 
-# create DB
-db.create_all()
+@app.route('/edit/<id>', methods=['POST', 'GET'])
+def get_user(id):
+    response = callDbWithStatement('SELECT * FROM users WHERE id = %s', id)
+    records = response['records']
+    user = {'id': records[0]['longValue'], 'username': records[1]['stringValue'],
+            'age': records[2]['longValue'], 'email': records[3]['stringValue']}
+
+    print(user['id'])
+    return render_template('layout.html', list_user=user['id'])
 
 
-# return web page
-@app.route("/home", methods=["GET"])
-def view_index():
-    return "<h2>fbjdfkbbv djksghv </h2>"
-    # return render_template("index.html")
+@app.route('/update/<id>', methods=['POST'])
+def update_user(id):
+    if request.method == 'POST':
+        username = request.form['username']
+        age = request.form['age']
+        email = request.form['email']
+
+        callDbWithStatement("""
+            UPDATE users
+            SET username = %s,
+                age = %s,
+                email = %s
+            WHERE id = %s
+        """, (username, age, email, id))
+        flash('user Updated Successfully')
+        return redirect(url_for('Index'))
 
 
-# @app.route("/edit/<note_id>", methods=["POST", "GET"])
-# def edit_note(note_id):
-#     if request.method == "POST":
-#         update_note(note_id, text=request.form['text'], done=request.form['done'])
-#     elif request.method == "GET":
-#         delete_note(note_id)
-#     return redirect("/", code=302)
-
-# get user by id endpoint
-@app.route('/users/<userid>', methods=['GET'])
-def get_user(email):
-    # db.session.query(User).filter_by(id=email)
-    user = User.query.get(email)
-    del user.__dict__['_sa_instance_state']
-    return jsonify(user.__dict__)
+@app.route('/delete/<string:id>', methods=['POST', 'GET'])
+def delete_user(id):
+    callDbWithStatement('DELETE FROM users WHERE id = {0}'.format(id))
+    flash('user Removed Successfully')
+    return redirect(url_for('Index'))
 
 
-# get all users endpoint
-@app.route('/users', methods=['GET'])
-def get_users():
-    users = []
-    for user in db.session.query(User).all():
-        del user.__dict__['_sa_instance_state']
-        users.append(user.__dict__)
-    return jsonify(users)
+def callDbWithStatement(sql, params=None):
+    response = rds_data.execute_statement(
+        database=aurora_db_name,
+        resourceArn=aurora_cluster_arn,
+        secretArn=aurora_secret_arn,
+        sql=sql,
+        parameters=params if params is not None else [],
+        includeResultMetadata=True
+    )
+    print(f'Making Call... {sql}')
+    print('.-' * 20)
+    print(response)
+    return response
 
 
-# create user endpoint
-@app.route('/createUser', methods=['POST'])
-def create_user():
-    body = request.get_json()
-    db.session.add(User(body['username'], body['email'], body['age']))
-    db.session.commit()
-    return "user created"
-
-
-# update user by email endpoint
-@app.route('/updateUser/<id>', methods=['PUT'])
-def update_user(email):
-    body = request.get_json()
-    db.session.query(User).filter_by(id=email).update(
-        dict(username=body['username'], age=body['age']))
-    db.session.commit()
-    return "User Details updated"
-
-
-# delete user by email
-@app.route('/deleteUser/<email>', methods=['DELETE'])
-def delete_item(email):
-    db.session.query(User).filter_by(id=email).delete()
-    db.session.commit()
-    return "User profile deleted"
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
+# </string:id></id></id>
