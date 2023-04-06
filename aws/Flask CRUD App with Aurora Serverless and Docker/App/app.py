@@ -53,7 +53,7 @@ def add_user():
 
 @app.route('/edit/<id>', methods=['POST', 'GET'])
 def get_user(id):
-    response = callDbWithStatement('SELECT * FROM users WHERE id = %s', id)
+    response = callDbWithStatement('SELECT * FROM users WHERE id = :id', params=id)
     records = response['records']
     user = {'id': records[0]['longValue'], 'username': records[1]['stringValue'],
             'age': records[2]['longValue'], 'email': records[3]['stringValue']}
@@ -69,12 +69,17 @@ def update_user(id):
         age = request.form['age']
         email = request.form['email']
 
+       params = [
+            {'name': 'username', 'value': {'stringValue': username}},
+            {'name': 'age', 'value': {'longValue': int(age)}},
+            {'name': 'email', 'value': {'stringValue': email}}
+        ]
         callDbWithStatement("""
             UPDATE users
-            SET username = %s,
-                age = %s,
-                email = %s
-            WHERE id = %s
+            SET username = :username,
+                age = :age,
+                email = :email
+            WHERE id = :id
         """, (username, age, email, id))
         flash('user Updated Successfully')
         return redirect(url_for('Index'))
