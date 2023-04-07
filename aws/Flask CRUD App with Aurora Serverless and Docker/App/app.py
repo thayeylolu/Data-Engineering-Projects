@@ -56,10 +56,11 @@ def get_user(id):
 
     records = response['records']
     print(records)
-    user = { item:records[0][item] for item in range(len(records)) }
 
-    # return(user)
-    return render_template('layout.html', list_user=user[0])
+    user = {'id': int(records[0][0]['longValue']), 'username': records[0][1]['stringValue'],
+                'age': int(records[0][2]['longValue']), 'email': records[0][3]['stringValue']}
+
+    return render_template('layout.html', list_user=user['id'])
 
 
 @app.route('/update/<id>', methods=['POST'])
