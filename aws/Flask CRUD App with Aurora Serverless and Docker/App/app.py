@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 import os
 import boto3
 from dotenv import load_dotenv
@@ -47,19 +47,19 @@ def add_user():
         ]
 
         callDbWithStatement("INSERT INTO users (username, age, email) VALUES (:username, :age, :email)", params=params)
-        flash('User Added successfully')
         return redirect(url_for('Index'))
 
 
 @app.route('/edit/<id>', methods=['POST', 'GET'])
 def get_user(id):
-    response = callDbWithStatement('SELECT * FROM users WHERE id = :id', params=id)
-    records = response['records']
-    user = {'id': records[0]['longValue'], 'username': records[1]['stringValue'],
-            'age': records[2]['longValue'], 'email': records[3]['stringValue']}
+    response = callDbWithStatement('SELECT * FROM users WHERE id = {0}'.format(id))
 
-    print(user['id'])
-    return render_template('layout.html', list_user=user['id'])
+    records = response['records']
+    print(records)
+    user = { item:records[0][item] for item in range(len(records)) }
+
+    # return(user)
+    return render_template('layout.html', list_user=user[0])
 
 
 @app.route('/update/<id>', methods=['POST'])
@@ -69,26 +69,19 @@ def update_user(id):
         age = request.form['age']
         email = request.form['email']
 
-       params = [
-            {'name': 'username', 'value': {'stringValue': username}},
-            {'name': 'age', 'value': {'longValue': int(age)}},
-            {'name': 'email', 'value': {'stringValue': email}}
-        ]
         callDbWithStatement("""
             UPDATE users
-            SET username = :username,
-                age = :age,
-                email = :email
-            WHERE id = :id
+            SET username = %s,
+                age = %s,
+                email = %s
+            WHERE id = %s
         """, (username, age, email, id))
-        flash('user Updated Successfully')
         return redirect(url_for('Index'))
 
 
 @app.route('/delete/<string:id>', methods=['POST', 'GET'])
 def delete_user(id):
     callDbWithStatement('DELETE FROM users WHERE id = {0}'.format(id))
-    flash('user Removed Successfully')
     return redirect(url_for('Index'))
 
 
