@@ -1,5 +1,5 @@
 
-# Data Pipeline for Real-Time Product Data Streaming with Kafka and AWS Service
+# Dockerized Flask CRUD Web App Deployed with AWS Services
 ----
 
 ![The Architecture Diagram](aws_crud_app.png)
